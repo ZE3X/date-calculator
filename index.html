@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حاسبة التواريخ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --card:      #1e2530;
+    --border:    #30363d;
+    --accent:    #58a6ff;
+    --accent2:   #3fb950;
+    --accent3:   #f78166;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --radius:    16px;
+  }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px;
+  }
+
+  header { text-align: center; margin-bottom: 40px; }
+  .logo {
+    font-size: 3.2rem; margin-bottom: 8px;
+    filter: drop-shadow(0 0 18px rgba(88,166,255,.45));
+  }
+  h1 {
+    font-size: 2rem; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent) 0%, #a5d6ff 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .subtitle { color: var(--muted); font-size: .95rem; margin-top: 6px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px;
+    width: 100%; max-width: 560px; box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  }
+
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 28px;
+    background: var(--card); padding: 6px; border-radius: 12px;
+  }
+  .tab {
+    flex: 1; padding: 10px; border: none; border-radius: 9px;
+    font-family: 'Cairo', sans-serif; font-size: .9rem; font-weight: 600;
+    cursor: pointer; transition: all .2s; background: transparent; color: var(--muted);
+  }
+  .tab.active {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 2px 12px rgba(88,166,255,.35);
+  }
+
+  .field { margin-bottom: 20px; }
+  label {
+    display: block; font-size: .85rem; font-weight: 600;
+    color: var(--muted); margin-bottom: 7px; letter-spacing: .4px;
+  }
+
+  /* ── Custom date input ── */
+  .date-input-wrap {
+    display: flex; align-items: center; gap: 4px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 16px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .date-input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88,166,255,.18);
+  }
+  .date-part {
+    background: transparent; border: none; outline: none;
+    color: var(--text); font-family: 'Cairo', sans-serif;
+    font-size: 1rem; font-weight: 600; text-align: center;
+    width: 36px;
+  }
+  .date-part.year { width: 56px; }
+  .date-sep { color: var(--muted); font-size: 1.1rem; font-weight: 700; user-select: none; }
+  .date-part::placeholder { color: var(--muted); }
+
+  input[type="number"] {
+    width: 100%; padding: 12px 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: 'Cairo', sans-serif; font-size: 1rem; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    direction: ltr; text-align: right;
+  }
+  input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88,166,255,.18);
+  }
+
+  .date-hint { font-size: .75rem; color: var(--muted); margin-top: 5px; }
+
+  .quick-days { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .quick-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-family: 'Cairo', sans-serif; font-size: .82rem; font-weight: 600;
+    cursor: pointer; transition: all .18s;
+  }
+  .quick-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+
+  .btn-calc {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #1a73e8);
+    border: none; border-radius: 12px; color: #fff;
+    font-family: 'Cairo', sans-serif; font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 18px rgba(88,166,255,.3); margin-top: 8px;
+  }
+  .btn-calc:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(88,166,255,.45); }
+  .btn-calc:active { transform: translateY(0); }
+
+  #result {
+    display: none; margin-top: 28px;
+    border-top: 1px solid var(--border); padding-top: 28px;
+    animation: fadeUp .35s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .stat-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; text-align: center;
+  }
+  .stat-box.highlight {
+    border-color: var(--accent); background: rgba(88,166,255,.08);
+    grid-column: 1 / -1;
+  }
+  .stat-label { font-size: .78rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .stat-value { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
+  .stat-box.highlight .stat-value { font-size: 2rem; letter-spacing: -0.5px; }
+  .stat-box.green .stat-value  { color: var(--accent2); }
+  .stat-box.orange .stat-value { color: #e3b341; }
+
+  .timeline {
+    background: var(--card); border-radius: 12px;
+    padding: 16px 20px; border: 1px solid var(--border);
+  }
+  .tl-label { font-size: .8rem; color: var(--muted); font-weight: 600; margin-bottom: 10px; text-align: center; }
+  .progress-track { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .6s cubic-bezier(.22,.97,.58,1);
+  }
+  .tl-dates { display: flex; justify-content: space-between; margin-top: 8px; font-size: .75rem; color: var(--muted); }
+
+  .error-msg {
+    background: rgba(247,129,102,.1); border: 1px solid rgba(247,129,102,.35);
+    border-radius: 10px; padding: 10px 16px;
+    color: var(--accent3); font-size: .85rem; margin-top: 12px; display: none;
+  }
+
+  footer { margin-top: 32px; color: var(--muted); font-size: .78rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📅</div>
+  <h1>حاسبة التواريخ</h1>
+  <p class="subtitle">احسب التاريخ المستقبلي أو الفرق بين تاريخين بدقة</p>
+</header>
+
+<div class="card">
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchMode('add')">➕ أضف أياماً لتاريخ</button>
+    <button class="tab" onclick="switchMode('diff')">🔁 الفرق بين تاريخين</button>
+  </div>
+
+  <!-- Mode 1 -->
+  <div id="mode-add">
+    <div class="field">
+      <label>📌 تاريخ البداية</label>
+      <div class="date-input-wrap">
+        <input class="date-part" id="s-dd" type="text" maxlength="2" placeholder="يي" inputmode="numeric">
+        <span class="date-sep">/</span>
+        <input class="date-part" id="s-mm" type="text" maxlength="2" placeholder="شش" inputmode="numeric">
+        <span class="date-sep">/</span>
+        <input class="date-part year" id="s-yy" type="text" maxlength="4" placeholder="سسسس" inputmode="numeric">
+      </div>
+      <div class="date-hint">الصيغة: يوم / شهر / سنة</div>
+    </div>
+    <div class="field">
+      <label>⏳ عدد الأيام</label>
+      <input type="number" id="daysInput" placeholder="مثال: 180" min="1">
+      <div class="quick-days">
+        <button class="quick-btn" onclick="setDays(30)">30 يوم</button>
+        <button class="quick-btn" onclick="setDays(60)">60 يوم</button>
+        <button class="quick-btn" onclick="setDays(90)">90 يوم</button>
+        <button class="quick-btn" onclick="setDays(180)">180 يوم</button>
+        <button class="quick-btn" onclick="setDays(270)">270 يوم</button>
+        <button class="quick-btn" onclick="setDays(365)">365 يوم</button>
+      </div>
+    </div>
+    <div class="error-msg" id="err-add"></div>
+    <button class="btn-calc" onclick="calculateAdd()">🔍 احسب التاريخ</button>
+  </div>
+
+  <!-- Mode 2 -->
+  <div id="mode-diff" style="display:none">
+    <div class="field">
+      <label>📌 تاريخ البداية</label>
+      <div class="date-input-wrap">
+        <input class="date-part" id="f-dd" type="text" maxlength="2" placeholder="يي" inputmode="numeric">
+        <span class="date-sep">/</span>
+        <input class="date-part" id="f-mm" type="text" maxlength="2" placeholder="شش" inputmode="numeric">
+        <span class="date-sep">/</span>
+        <input class="date-part year" id="f-yy" type="text" maxlength="4" placeholder="سسسس" inputmode="numeric">
+      </div>
+      <div class="date-hint">الصيغة: يوم / شهر / سنة</div>
+    </div>
+    <div class="field">
+      <label>🏁 تاريخ النهاية</label>
+      <div class="date-input-wrap">
+        <input class="date-part" id="t-dd" type="text" maxlength="2" placeholder="يي" inputmode="numeric">
+        <span class="date-sep">/</span>
+        <input class="date-part" id="t-mm" type="text" maxlength="2" placeholder="شش" inputmode="numeric">
+        <span class="date-sep">/</span>
+        <input class="date-part year" id="t-yy" type="text" maxlength="4" placeholder="سسسس" inputmode="numeric">
+      </div>
+      <div class="date-hint">الصيغة: يوم / شهر / سنة</div>
+    </div>
+    <div class="error-msg" id="err-diff"></div>
+    <button class="btn-calc" onclick="calculateDiff()">🔍 احسب الفرق</button>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<footer>يدعم التقويم الميلادي • الحسابات دقيقة 100%</footer>
+
+<script>
+  // ── Helpers ──
+  const ARABIC_DAYS   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                         'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  function fmtArabic(d) {
+    return `${ARABIC_DAYS[d.getDay()]}، ${d.getDate()} ${ARABIC_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  function fmtShort(d) {
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    return `${dd}/${mm}/${d.getFullYear()}`;
+  }
+
+  function parseDate(dd, mm, yy) {
+    const d = parseInt(dd), m = parseInt(mm), y = parseInt(yy);
+    if (isNaN(d)||isNaN(m)||isNaN(y)) return null;
+    if (m < 1 || m > 12) return null;
+    if (d < 1 || d > 31) return null;
+    if (y < 1900 || y > 2200) return null;
+    const date = new Date(y, m-1, d);
+    // Check actual validity (e.g. Feb 30)
+    if (date.getFullYear()!==y || date.getMonth()!==m-1 || date.getDate()!==d) return null;
+    return date;
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.style.display = 'block';
+  }
+  function hideError(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  // Auto-advance focus on date parts
+  function wireAutoAdvance(ddId, mmId, yyId) {
+    document.getElementById(ddId).addEventListener('input', function() {
+      if (this.value.length === 2) document.getElementById(mmId).focus();
+    });
+    document.getElementById(mmId).addEventListener('input', function() {
+      if (this.value.length === 2) document.getElementById(yyId).focus();
+    });
+  }
+  wireAutoAdvance('s-dd','s-mm','s-yy');
+  wireAutoAdvance('f-dd','f-mm','f-yy');
+  wireAutoAdvance('t-dd','t-mm','t-yy');
+
+  // ── Set today by default ──
+  const today = new Date();
+  document.getElementById('s-dd').value = String(today.getDate()).padStart(2,'0');
+  document.getElementById('s-mm').value = String(today.getMonth()+1).padStart(2,'0');
+  document.getElementById('s-yy').value = today.getFullYear();
+  document.getElementById('f-dd').value = String(today.getDate()).padStart(2,'0');
+  document.getElementById('f-mm').value = String(today.getMonth()+1).padStart(2,'0');
+  document.getElementById('f-yy').value = today.getFullYear();
+
+  function switchMode(m) {
+    document.querySelectorAll('.tab').forEach((t,i)=>{
+      t.classList.toggle('active', (m==='add'&&i===0)||(m==='diff'&&i===1));
+    });
+    document.getElementById('mode-add').style.display  = m==='add'  ? '' : 'none';
+    document.getElementById('mode-diff').style.display = m==='diff' ? '' : 'none';
+    document.getElementById('result').style.display = 'none';
+    hideError('err-add'); hideError('err-diff');
+  }
+
+  function setDays(n) { document.getElementById('daysInput').value = n; }
+
+  function calculateAdd() {
+    hideError('err-add');
+    const start = parseDate(
+      document.getElementById('s-dd').value,
+      document.getElementById('s-mm').value,
+      document.getElementById('s-yy').value
+    );
+    if (!start) { showError('err-add','⚠️ تاريخ البداية غير صحيح. تأكد من الصيغة: يوم/شهر/سنة'); return; }
+
+    const days = parseInt(document.getElementById('daysInput').value);
+    if (!days || days < 1) { showError('err-add','⚠️ الرجاء إدخال عدد أيام صحيح (أكبر من صفر)'); return; }
+
+    const end = new Date(start);
+    end.setDate(end.getDate() + days);
+
+    const weeks   = Math.floor(days / 7);
+    const remDays = days % 7;
+    const months  = Math.floor(days / 30.44);
+
+    const todayObj = new Date();
+    const elapsed  = Math.max(0, Math.min(days, Math.round((todayObj - start)/(1000*60*60*24))));
+    const pct      = Math.round((elapsed / days) * 100);
+
+    const div = document.getElementById('result');
+    div.innerHTML = `
+      <div class="result-grid">
+        <div class="stat-box highlight">
+          <div class="stat-label">📅 التاريخ بعد ${days} يوم</div>
+          <div class="stat-value">${fmtShort(end)}</div>
+          <div style="color:var(--muted);font-size:.85rem;margin-top:4px">${fmtArabic(end)}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">📆 تاريخ البداية</div>
+          <div class="stat-value" style="font-size:1.1rem">${fmtShort(start)}</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-label">🗓️ بالأسابيع</div>
+          <div class="stat-value">${weeks} أسبوع${remDays ? ' و'+remDays+' أيام' : ''}</div>
+        </div>
+        <div class="stat-box orange">
+          <div class="stat-label">📊 تقريباً بالأشهر</div>
+          <div class="stat-value">~${months} شهر</div>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="tl-label">📍 موقع اليوم على مدى الفترة (${pct}%)</div>
+        <div class="progress-track">
+          <div class="progress-fill" id="pFill" style="width:0%"></div>
+        </div>
+        <div class="tl-dates">
+          <span>${fmtShort(start)}</span>
+          <span>${fmtShort(end)}</span>
+        </div>
+      </div>
+    `;
+    div.style.display = 'block';
+    setTimeout(()=>{ document.getElementById('pFill').style.width = pct+'%'; }, 80);
+  }
+
+  function calculateDiff() {
+    hideError('err-diff');
+    const d1 = parseDate(
+      document.getElementById('f-dd').value,
+      document.getElementById('f-mm').value,
+      document.getElementById('f-yy').value
+    );
+    const d2 = parseDate(
+      document.getElementById('t-dd').value,
+      document.getElementById('t-mm').value,
+      document.getElementById('t-yy').value
+    );
+    if (!d1) { showError('err-diff','⚠️ تاريخ البداية غير صحيح. تأكد من الصيغة: يوم/شهر/سنة'); return; }
+    if (!d2) { showError('err-diff','⚠️ تاريخ النهاية غير صحيح. تأكد من الصيغة: يوم/شهر/سنة'); return; }
+
+    const diff    = Math.round((d2 - d1) / (1000*60*60*24));
+    const absDiff = Math.abs(diff);
+    const direction = diff >= 0 ? 'إلى الأمام' : 'إلى الوراء';
+    const weeks   = Math.floor(absDiff / 7);
+    const remD    = absDiff % 7;
+    const months  = Math.floor(absDiff / 30.44);
+    const years   = (absDiff / 365.25).toFixed(2);
+
+    const div = document.getElementById('result');
+    div.innerHTML = `
+      <div class="result-grid">
+        <div class="stat-box highlight">
+          <div class="stat-label">⏱️ إجمالي الفرق (${direction})</div>
+          <div class="stat-value">${absDiff.toLocaleString('ar-EG')} يوم</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-label">🗓️ بالأسابيع</div>
+          <div class="stat-value">${weeks} أسبوع${remD ? ' و'+remD+' أيام' : ''}</div>
+        </div>
+        <div class="stat-box orange">
+          <div class="stat-label">📅 بالأشهر (تقريباً)</div>
+          <div class="stat-value">~${months} شهر</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">🌍 بالسنوات</div>
+          <div class="stat-value">~${years} سنة</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">📌 تاريخ البداية</div>
+          <div class="stat-value" style="font-size:.95rem">${fmtShort(d1)}</div>
+          <div style="color:var(--muted);font-size:.75rem;margin-top:3px">${fmtArabic(d1)}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">🏁 تاريخ النهاية</div>
+          <div class="stat-value" style="font-size:.95rem">${fmtShort(d2)}</div>
+          <div style="color:var(--muted);font-size:.75rem;margin-top:3px">${fmtArabic(d2)}</div>
+        </div>
+      </div>
+    `;
+    div.style.display = 'block';
+  }
+</script>
+</body>
+</html>
